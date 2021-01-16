@@ -77,12 +77,12 @@ const displayMovements = function (movements) {
   });
 };
 
-const calculateBalanace = function (movements) {
-  const balance = movements.reduce(
+const calculateBalanace = function (acc) {
+  acc.balance = acc.movements.reduce(
     (accumulator, movement) => accumulator + movement,
     0
   );
-  labelBalance.textContent = `${balance}€`;
+  labelBalance.textContent = `${acc.balance}€`;
 };
 
 const calcDisplaySummary = function (acc) {
@@ -102,6 +102,14 @@ const calcDisplaySummary = function (acc) {
     .filter(mov => mov >= 1)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumInterest.textContent = `${interest}€`;
+};
+
+const updateUI = function (acc) {
+  displayMovements(acc.movements);
+  // Display balance
+  calculateBalanace(acc);
+  // Display summary
+  calcDisplaySummary(acc);
 };
 
 const createUsernames = function (accs) {
@@ -134,130 +142,55 @@ btnLogin.addEventListener('click', function (e) {
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
     // Display movements
-    displayMovements(currentAccount.movements);
-    // Display balance
-    calculateBalanace(currentAccount.movements);
-    // Display summary
-    calcDisplaySummary(currentAccount);
+    updateUI(currentAccount);
   } else {
     containerApp.style.opacity = 0;
     labelWelcome.textContent = 'You entered wrong data';
   }
 });
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const recieverAccount = accounts.find(
+    acc => acc.username === inputTransferTo.value
+  );
 
-/* for (const movement of movements) {
-  if (movement > 0) {
-    console.log(`You deposited ${movement}`);
-  } else {
-    console.log(`You withdrew ${Math.abs(movement)}`);
+  if (
+    amount > 0 &&
+    recieverAccount &&
+    currentAccount.balance >= amount &&
+    recieverAccount?.username !== currentAccount.username
+  ) {
+    currentAccount.movements.push(-amount);
+    recieverAccount.movements.push(amount);
+    updateUI(currentAccount);
+    inputTransferAmount.value = inputTransferTo.value = '';
+    inputTransferAmount.blur();
   }
-} 
+});
 
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-
-movements.forEach((movement, index) => {
-  if (movement > 0) {
-    console.log(`Movement ${index + 1}: You deposited ${movement}`);
-  } else {
-    console.log(`Movement ${index + 1}: You withdrew ${Math.abs(movement)}`);
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputLoanAmount.value);
+  if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
+    currentAccount.movements.push(amount);
+    updateUI(currentAccount);
   }
 });
 
-const currencies = new Map([
-  ['USD', 'United States dollar'],
-  ['EUR', 'Euro'],
-  ['GBP', 'Pound sterling'],
-]);
-
-currencies.forEach(function (value, key, map) {
-  console.log(`${key}: ${value}`);
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  if (
+    inputCloseUsername.value === currentAccount.username &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.username === currentAccount.username
+    );
+    accounts.splice(index, 1);
+    containerApp.style.opacity = 0;
+    labelWelcome.textContent = 'Account deleted successfully';
+  }
+  inputClosePin.value = inputCloseUsername.value = '';
 });
-
-const currenciesUnique = new Set([`USD`, `GBP`, `EUR`]);
-console.log(currenciesUnique);
-currenciesUnique.forEach(function (value, key, map) {
-  console.log(`${key}: ${value}`);
-});
-
-const juliaDogs = [3, 5, 2, 12, 7];
-const kateDogs = [4, 1, 15, 8, 3];
-const juliaDogsModified = juliaDogs.slice(1, 3);
-const dogsAges = kateDogs.concat(juliaDogsModified);
-function displayDogsAge() {
-  dogsAges.forEach((age, index) => {
-    const dogAge =
-      age >= 3 ? `an adult, and is ${age} years old 🐕‍🦺` : `still a puppy 🐩`;
-    console.log(`Dog number ${index + 1} is ${dogAge}`);
-  });
-}
-displayDogsAge();
-/////////////////////////////////////////////////
-
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-const eurToUsd = 1.1;
-const movementsUsd = movements.map(movement =>
-  (Math.round(movement * eurToUsd * 100) / 100).toFixed(0)
-);
-console.log(movements);
-console.log(movementsUsd);
-
-
-
-const deposits = movements.filter(movement => movement > 0);
-console.log(deposits);
-const withdrawals = movements.filter(movement => movement < 0);
-console.log(withdrawals);
-
-const balance = movements.reduce(
-  (accumulator, current) => accumulator + current
-);
-console.log(balance);
-
-
-
-const calcAverageHumanAge = function (ages) {
-  const humanAges = ages.map(age => (age <= 2 ? 2 * age : 16 + age * 4));
-  const adults = humanAges.filter(age => age >= 18);
-  const average =
-    adults.reduce((accumulator, age) => accumulator + age, 0) / adults.length;
-  return average;
-};
-calcAverageHumanAge([5, 2, 4, 1, 15, 8, 3]);
-console.log(calcAverageHumanAge([5, 2, 4, 1, 15, 8, 3]));
-
-
-
-// PIPELINE
-const totalDepositsUsd = movements
-  .filter(movement => movement > 0)
-  .map(movement => movement * 1.1)
-  .reduce((accumulator, movement) => accumulator + movement, 0);
-console.log(totalDepositsUsd);
-
-
-
-const calcAverageHumanAge = function (ages) {
-  const averageAges = ages
-    .map(age => (age <= 2 ? 2 * age : 16 + age * 4))
-    .filter(age => age >= 18)
-    .reduce((acc, age, i, arr) => acc + age / arr.length, 0);
-  return averageAges;
-};
-calcAverageHumanAge([5, 2, 4, 1, 15, 8, 3]);
-console.log(calcAverageHumanAge([5, 2, 4, 1, 15, 8, 3]));
-
-
-
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-const movementsFind = movements.find(mov => mov < 0);
-console.log(movementsFind);
-console.log(accounts);
-
-const account = accounts.find(acc => acc.owner === `Jessica Davis`);
-console.log(account);
-
-*/
